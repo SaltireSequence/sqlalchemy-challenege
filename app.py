@@ -2,12 +2,10 @@
 # IMPORTING DEPENDENCIES
 #################################################
 import numpy as np
-
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
-
 from flask import Flask, jsonify
 
 #################################################
@@ -36,6 +34,7 @@ app = Flask(__name__)
 # TRIP USING THE PREVIOUS YEAR'S DATA FOR THOSE
 # SAME DATES.
 #################################################
+
 # This function called `calc_temps` will accept start date and end date in the
 # format '%Y-%m-%d' and return the minimum, average, and maximum temperatures
 # for that range of dates
@@ -55,7 +54,9 @@ def calc_temps(start_date, end_date):
         filter(Measurement.date >= start_date).filter(Measurement.date <=
         end_date).all()
 
-# Setting Flask Routes
+###########################################
+# SETTING UP FLASK ROUTES AVAILABLE TO USER
+###########################################
 @app.route("/")
 def welcome():
     """A list of all available API routes to the user"""
@@ -74,6 +75,46 @@ def precipitation():
 the last year of data. Return a JSON list of temperature observations (TOBS)\
 for the previous year."""
 
-    final_date_query = session.query(func.max(func.strftime("%Y-%m-%d", Measurement.date))).all()
-    max_date_string = final_date_query[0][0]
+    latest_date = session.query(func.max(func.strftime("%Y-%m-%d", Measurement.
+    date))).all()
+    max_date_string = latest_date[0][0]
     max_date = datetime.datetime.strptime(max_date_string, "%Y-%m-%d")
+
+    #Initializing beginning of search query
+    start_date = max_date - datetime.timedelta(366)
+
+    # Querying dates and precipitation data
+    precipitation_data = session.query(func.strftime("%Y-%m-%d",
+    Measurement.date), Measurement.prcp).filter(func.strftime("%Y-%m-%d",
+    Measurement.date) >= begin_date).all()
+
+    # Initilizing a dictionary with the date (as the key) and the precipitation
+    # value as the value.
+    results_query_dict = {}
+    for result in precipitation_data:
+        results_query_dict[result[0]] = result[1]
+
+    return jsonify(results_dict)
+
+
+@app.route("/api/v1.0/stations")
+def stations():
+    """Returns a list of all available stations for the user to query"""
+
+    # query stations list
+    stations_data = session.query(Station).all()
+
+    # creating a dictionary to store returned query information
+    stations_list = []
+    for station in stations_data:
+        station_dict = {}
+        station_dict["id"] = station.id
+        station_dict["station"] = station.station
+        station_dict["name"] = station.name
+        station_dict["latitude"] = station.latitude
+        station_dict["longitude"] = station.longitude
+        station_dict["elevation"] = station.elevation
+        stations_list.append(station_dict)
+    return jsonify(stations_list)
+
+@app.route("/api/v1.0/tobs")
