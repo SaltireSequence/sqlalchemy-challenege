@@ -125,6 +125,7 @@ def stations():
 # CREATING TEMPERATURE OBSERVATION DATA ROUTE #
 ###############################################
 @app.route("/api/v1.0/tobs")
+def tobs():
     ""Query the dates and temperature observations of the most active station \
     for the last year of data. Return a JSON list of temperature observations \
     (TOBS) for the previous year."""
@@ -155,10 +156,49 @@ def stations():
 
     return jsonify(TOBS_list)
 
-@app.route("/api/v1.0/<start>/<end>")
+#############################
+# CREATING START DATA ROUTE #
+#############################
+@app.route("/api/v1.0/<start>")
+def start(start):
+    """When given the start only, calculate TMIN, TAVG, and TMAX for all dates \
+    greater than and equal to the start date."""
 
-"""Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range."""
+    latest_date = session.query(func.max(func.strftime("%Y-%m-%d", Measurement.
+    date))).all()
+    max_date_string = latest_date[0][0]
 
-When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.
+    start_date = max_date - datetime.timedelta(366)
 
-When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.
+    temperatures = calc_temps(start, max_date)
+
+    return_query = []
+    date_dictionary = {'start_date': starting_date, 'end_date': ending_date}
+    return_query.append(date_dictionary)
+    return_query.append({'TMIN - ', 'Temperature': temperatures[0][0]})
+    return_query.append({'TAVG - ', 'Temperature': temperatures[0][1]})
+    return_query.append({'TMAX' - , 'Temperature': temperatures[0][2]})
+
+    return jsonify(return_query)
+
+####################################
+# CREATING START  - END DATA ROUTE #
+####################################
+    @app.route("/api/v1.0/<start>/<end>")
+    def start_end(start, end):
+        """When given the start and the end date, calculate the TMIN, TAVG, \
+        and TMAX for dates between the start and end date inclusive."""
+
+    temperatures = calc_temps(start, end)
+
+    return_query_list = []
+    date_dictionary = {'start_date': starting_date, 'end_date': ending_date}
+    return_list.append(date_dictionary)
+    return_list.append({'TMIN - ', 'Temperature': temps[0][0]})
+    return_list.append({'TAVG - ', 'Temperature': temps[0][1]})
+    return_list.append({'TMAX - ', 'Temperature': temps[0][2]})
+
+    return jsonfiy (return_query_list)
+
+    if __name__ == '__main__':
+        app.run(debug = True)
