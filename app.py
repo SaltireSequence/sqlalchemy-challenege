@@ -1,6 +1,6 @@
-#################################################
-# IMPORTING DEPENDENCIES
-#################################################
+##########################
+# IMPORTING DEPENDENCIES #
+##########################
 import numpy as np
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
 from flask import Flask, jsonify
 
-#################################################
-# DATABASE SETUP
-#################################################
+##################
+# DATABASE SETUP #
+##################
 # Creating engine
 engine = create_engine("sqlite:///hawaii.sqlite")
 
@@ -24,15 +24,15 @@ Station = Base.classes.station
 # Opening Session
 session.Session(engine)
 
-#################################################
-# FLASK SETUP
-#################################################
+###############
+# FLASK SETUP #
+###############
 app = Flask(__name__)
 
 #################################################
-# CALCULATING THE TMIN, TAVG, AND TMAX FOR YOUR
-# TRIP USING THE PREVIOUS YEAR'S DATA FOR THOSE
-# SAME DATES.
+# CALCULATING THE TMIN, TAVG, AND TMAX FOR YOUR #
+# TRIP USING THE PREVIOUS YEAR'S DATA FOR THOSE #
+# SAME DATES.                                   #
 #################################################
 
 # This function called `calc_temps` will accept start date and end date in the
@@ -54,9 +54,9 @@ def calc_temps(start_date, end_date):
         filter(Measurement.date >= start_date).filter(Measurement.date <=
         end_date).all()
 
-###########################################
-# SETTING UP FLASK ROUTES AVAILABLE TO USER
-###########################################
+#############################################
+# SETTING UP FLASK ROUTES AVAILABLE TO USER #
+#############################################
 @app.route("/")
 def welcome():
     """A list of all available API routes to the user"""
@@ -68,7 +68,9 @@ def welcome():
         f"/api/v1.0/<start><br/>"
         f"/api/v1.0/<start>/<end>"
 
-
+################################
+# CREATING PRECIPITATION ROUTE #
+################################
 @app.route("/api/v1.0/names")
 def precipitation():
 """Query the dates and temperature observations of the most active station for \
@@ -80,7 +82,7 @@ for the previous year."""
     max_date_string = latest_date[0][0]
     max_date = datetime.datetime.strptime(max_date_string, "%Y-%m-%d")
 
-    #Initializing beginning of search query
+    # Initializing beginning of search query
     start_date = max_date - datetime.timedelta(366)
 
     # Querying dates and precipitation data
@@ -96,7 +98,9 @@ for the previous year."""
 
     return jsonify(results_dict)
 
-
+###########################
+# CREATING STATIONS ROUTE #
+###########################
 @app.route("/api/v1.0/stations")
 def stations():
     """Returns a list of all available stations for the user to query"""
@@ -117,4 +121,44 @@ def stations():
         stations_list.append(station_dict)
     return jsonify(stations_list)
 
+###############################################
+# CREATING TEMPERATURE OBSERVATION DATA ROUTE #
+###############################################
 @app.route("/api/v1.0/tobs")
+    ""Query the dates and temperature observations of the most active station \
+    for the last year of data. Return a JSON list of temperature observations \
+    (TOBS) for the previous year."""
+
+# Identifying the latest date in our SQL database
+    latest_date_query = session.query(func.max(func.strftime("%Y-%m-%d",
+    Measurement.date))).all()
+
+    max_date_string = latest_date[0][0]
+
+    max_date = datetime.datetime.strptime(max_date_string, "%Y-%m-%d")
+
+    # Setting date at beginning of Query
+    start_date = max_date - datetime.timedelta(365)
+
+    # Returning temperatire recording for last year
+    last_year_results = session.query(Measurement).filter(func.strftime("%Y-%m-%d",
+    Measurement.date) >= begin_date).all()
+
+    # Dictionary and for loop to iterate through and store observations.
+    TOBS_list = []
+    for result in last_year_results
+        TOBS_dict = {}
+        TOBS_dict["date"] = result.dates
+        TOBS_dict["station"] = results.station
+        TOBS_dict["tobs"] = results.tobs
+        TOBS_list.append(TOBS_dict)
+
+    return jsonify(TOBS_list)
+
+@app.route("/api/v1.0/<start>/<end>")
+
+"""Return a JSON list of the minimum temperature, the average temperature, and the max temperature for a given start or start-end range."""
+
+When given the start only, calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date.
+
+When given the start and the end date, calculate the TMIN, TAVG, and TMAX for dates between the start and end date inclusive.
